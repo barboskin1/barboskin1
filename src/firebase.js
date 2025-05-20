@@ -19,6 +19,9 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
+// Экспортируем provider, чтобы он был доступен в Auth.jsx
+export { db, auth, provider, signInWithPopup, signIn, signOutUser, onAuthChange };
+
 function signIn() {
   return signInWithPopup(auth, provider);
 }
@@ -30,5 +33,3 @@ function signOutUser() {
 function onAuthChange(callback) {
   return onAuthStateChanged(auth, callback);
 }
-
-export { db, auth, signIn, signOutUser, onAuthChange };
