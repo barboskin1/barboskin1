@@ -1,26 +1,22 @@
-// src/Auth.jsx
-import React, { useEffect, useState } from "react";
-import { signIn, signOutUser, onAuthChange } from "./firebase";
+import React from "react";
+import { auth, provider } from "./firebase";
+import { signInWithPopup } from "firebase/auth";
 
-export default function Auth({ onUser }) {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const unsubscribe = onAuthChange((u) => {
-      setUser(u);
-      onUser(u);
-    });
-    return () => unsubscribe();
-  }, [onUser]);
-
-  if (!user) {
-    return <button onClick={signIn}>Войти через Google</button>;
-  }
+function Auth({ setUser }) {
+  const signIn = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      setUser(result.user);
+    } catch (error) {
+      console.error("Ошибка авторизации", error);
+    }
+  };
 
   return (
     <div>
-      <p>Привет, {user.displayName}</p>
-      <button onClick={signOutUser}>Выйти</button>
+      <button onClick={signIn}>Войти через Google</button>
     </div>
   );
 }
+
+export default Auth;

@@ -1,65 +1,47 @@
 import React, { useEffect, useState } from "react";
-import { 
-  collection, query, orderBy, onSnapshot, addDoc, serverTimestamp 
-} from "firebase/firestore";
-import { db } from "./firebase"; // импорт настроенного Firestore
-import { getAuth } from "firebase/auth";
+import { db, auth } from "./firebase";
+import { collection, addDoc, onSnapshot, query, orderBy } from "firebase/firestore";
 
-export default function Chat() {
+function Chat() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const auth = getAuth();
-  const user = auth.currentUser;
 
   useEffect(() => {
     const q = query(collection(db, "messages"), orderBy("createdAt"));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const msgs = [];
-      querySnapshot.forEach((doc) => {
-        msgs.push({ id: doc.id, ...doc.data() });
-      });
-      setMessages(msgs);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
     return () => unsubscribe();
   }, []);
 
-  async function sendMessage(e) {
-    e.preventDefault();
-    if (!input.trim()) return;
-
-    if (!user) {
-      alert("Пожалуйста, авторизуйтесь чтобы отправлять сообщения");
-      return;
-    }
-
+  const sendMessage = async () => {
+    if (!input) return;
     await addDoc(collection(db, "messages"), {
       text: input,
-      userId: user.uid,
-      userName: user.displayName || "Anon",
-      createdAt: serverTimestamp(),
+      uid: auth.currentUser.uid,
+      displayName: auth.currentUser.displayName,
+      createdAt: new Date(),
     });
-
     setInput("");
-  }
+  };
 
   return (
     <div>
-      <div style={{ height: "300px", overflowY: "scroll", border: "1px solid #ccc", padding: "10px" }}>
+      <div style={{ height: 300, overflowY: "auto" }}>
         {messages.map(msg => (
           <div key={msg.id}>
-            <b>{msg.userName}:</b> {msg.text}
+            <b>{msg.displayName}: </b> {msg.text}
           </div>
         ))}
       </div>
-      <form onSubmit={sendMessage}>
-        <input 
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder="Введите сообщение"
-          style={{ width: "80%" }}
-        />
-        <button type="submit">Отправить</button>
-      </form>
+      <input
+        value={input}
+        onChange={e => setInput(e.target.value)}
+        placeholder="Введите сообщение"
+      />
+      <button onClick={sendMessage}>Отправить</button>
     </div>
   );
 }
+
+export default Chat;
